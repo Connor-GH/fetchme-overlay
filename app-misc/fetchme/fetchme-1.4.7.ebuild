@@ -3,18 +3,17 @@
 
 EAPI=8
 
-
 inherit savedconfig toolchain-funcs
 
 DESCRIPTION="Fast System Information Tool Written in C"
-HOMEPAGE="https://github.com/connor-gh/${PN}"
+HOMEPAGE="https://github.com/connor-gh/fetchme"
 
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/connor-gh/${PN}.git"
 else
 	SRC_URI="https://github.com/Connor-GH/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~m68k ~ppc64 ~riscv ~x86"
+	KEYWORDS="~amd64 ~arm64"
 fi
 
 IUSE="minimal savedconfig xcb"
@@ -54,26 +53,31 @@ src_configure() {
 			M_RESOLUTION=n M_REFRESH_RATE=n M_WM=n M_GPU=n"
 	fi
 
-	if use xcb; then
-		CONFIGURE_MAKE_FLAGS="$CONFIGURE_MAKE_FLAGS \
-			M_RESOLUTION_XCB=y M_REFRESH_RATE_XCB=y"
-	fi
 }
 
+src_compile() {
+
+	emake $CONFIGURE_MAKE_FLAGS  \
+		CC="$(tc-getCC)"
+}
 
 src_install() {
 
-	emake $CONFIGURE_MAKE_FLAGS DESTDIR="${D}" \
-		CC="$(tc-getCC)" LINKER="$(tc-getCC)" install \
-		|| die "emake install failed";
-
-
+	emake $CONFIGURE_MAKE_FLAGS \
+	DESTDIR="${D}" install
 
 	save_config config.mk
 }
 
 pkg_postinst() {
 	if ! [[ "${REPLACING_VERSIONS}" ]]; then
-		elog "config.mk can be used with savedconfig"
+		elog "\nconfig.mk can be used with savedconfig\n"
+	fi
+	if use xcb; then
+		elog ""
+		elog "You have enabled the xcb use flag."
+		elog "This does not enable the xcb options,"
+		elog "it only makes them available."
+		elog ""
 	fi
 }
